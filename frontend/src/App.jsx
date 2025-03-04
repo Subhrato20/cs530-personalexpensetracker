@@ -1,18 +1,10 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import Auth from "./Auth";
 
 function App() {
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/hello")
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message))
-      .catch((err) => console.error("Error fetching data:", err));
-  }, []);
-
   return (
     <div>
-      <h1>{message || "Loading..."}</h1>
+      <Auth />
     </div>
   );
 }
