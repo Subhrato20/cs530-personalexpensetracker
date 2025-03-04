@@ -38,5 +38,29 @@ def signin():
 
     return jsonify(result)
 
+
+@app.route('/api/add_expense', methods=['POST'])
+def add_expense():
+    data = request.get_json()
+
+    required_fields = ['username', 'expense_name', 'amount', 'category', 'date']
+    missing_fields = [field for field in required_fields if field not in data or not data[field]]
+
+    if missing_fields:
+        return jsonify({"success": False, "message": f"Missing fields: {', '.join(missing_fields)}"}), 400
+
+    result = db_handler.add_expense(data['username'], data['expense_name'], data['amount'], data['category'], data['date'])
+    return jsonify(result)
+
+@app.route('/api/get_expenses', methods=['GET'])
+def get_expenses():
+    username = request.args.get('username')
+
+    if not username:
+        return jsonify({"success": False, "message": "Username is required."}), 400
+
+    result = db_handler.get_expenses(username)
+    return jsonify(result)
+
 if __name__ == '__main__':
     app.run(debug=True)

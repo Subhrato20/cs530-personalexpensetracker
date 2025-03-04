@@ -16,6 +16,20 @@ def init_db():
                 password TEXT NOT NULL
             )
         ''')
+
+        # Create expenses table with username as the foreign key
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                expense_name TEXT NOT NULL,
+                amount REAL NOT NULL,
+                category TEXT NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+            )
+        ''')
+
         conn.commit()
 
 # Initialize the database when the module is loaded.
@@ -88,3 +102,38 @@ def signin_user_by_username(username, password):
 
     except Exception as e:
         return {"success": False, "message": f"Unexpected Error: {str(e)}"}
+
+def add_expense(username, expense_name, amount, category, date):
+    """Adds an expense for a user."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO expenses (username, expense_name, amount, category, date) VALUES (?, ?, ?, ?, ?)", 
+                           (username, expense_name, amount, category, date))
+            conn.commit()
+            return {"success": True, "message": "Expense added successfully."}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
+    
+
+def get_expenses(username):
+    """Fetches all expenses for a specific user."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, expense_name, amount, category, date FROM expenses WHERE username = ?", (username,))
+            expenses = cursor.fetchall()
+
+            if not expenses:
+                return {"success": True, "expenses": []}  # Return empty list if no expenses found
+
+            expense_list = [
+                {"id": row[0], "expense_name": row[1], "amount": row[2], "category": row[3], "date": row[4]}
+                for row in expenses
+            ]
+
+            return {"success": True, "expenses": expense_list}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
