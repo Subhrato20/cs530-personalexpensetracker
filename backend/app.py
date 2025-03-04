@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import db_handler
+import base64
+from receipt_extractor import extract_receipt_details
 
 app = Flask(__name__)
 CORS(app)
@@ -43,13 +45,13 @@ def signin():
 def add_expense():
     data = request.get_json()
 
-    required_fields = ['username', 'expense_name', 'amount', 'category', 'date']
+    required_fields = ['username', 'name', 'amount', 'category', 'date']
     missing_fields = [field for field in required_fields if field not in data or not data[field]]
 
     if missing_fields:
         return jsonify({"success": False, "message": f"Missing fields: {', '.join(missing_fields)}"}), 400
 
-    result = db_handler.add_expense(data['username'], data['expense_name'], data['amount'], data['category'], data['date'])
+    result = db_handler.add_expense(data['username'], data['name'], data['amount'], data['category'], data['date'])
     return jsonify(result)
 
 @app.route('/api/get_expenses', methods=['GET'])
@@ -61,6 +63,58 @@ def get_expenses():
 
     result = db_handler.get_expenses(username)
     return jsonify(result)
+
+@app.route('/api/upload_expense', methods=['POST'])
+def upload_expense():
+    """
+    Upload a receipt image, extract structured data using LLM, and save it to the expenses database.
+    Expected form fields:
+      - 'username' (string)
+      - 'file' (receipt image)
+    """
+
+    # 1) Validate username input
+    username = request.form.get('username') or (request.json.get('username') if request.is_json else None)
+    if not username:
+        return jsonify({"success": False, "message": "Username is required"}), 400
+
+    # 2) Validate file input
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No image file provided."}), 400
+
+    image_file = request.files['file']
+    if image_file.filename == '':
+        return jsonify({"success": False, "message": "Empty file name."}), 400
+
+    # 3) Convert Image to Base64
+    image_data = image_file.read()  # Read binary data
+    image_base64 = base64.b64encode(image_data).decode('utf-8')  # Convert to Base64 string
+
+    # 4) Extract structured details from the receipt using the LLM
+    details = extract_receipt_details(image_base64)
+    if 'error' in details:
+        return jsonify({
+            "success": False,
+            "message": f"Error extracting receipt: {details['error']}",
+            "details": details.get("details")
+        }), 500
+
+    # 5) Validate extracted details
+    required_fields = ["amount", "category", "date", "name"]
+    for field in required_fields:
+        if field not in details:
+            return jsonify({"success": False, "message": f"Missing '{field}' in extracted data."}), 400
+
+    # 6) Insert the extracted data into the database
+    result = db_handler.add_expense(
+        username=username,
+        name=details["name"],
+        amount=details["amount"],
+        category=details["category"],
+        date=details["date"]
+    )
+
+    return jsonify(result), (200 if result.get("success") else 400)
 
 if __name__ == '__main__':
     app.run(debug=True)
