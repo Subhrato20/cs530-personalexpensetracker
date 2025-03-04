@@ -30,6 +30,18 @@ def init_db():
             )
         ''')
 
+                # Alerts table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                name TEXT NOT NULL,
+                amount REAL NOT NULL,
+                due_date TEXT NOT NULL,
+                FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+            )
+        ''')
+
         conn.commit()
 
 # Initialize the database when the module is loaded.
@@ -134,6 +146,41 @@ def get_expenses(username):
             ]
 
             return {"success": True, "expenses": expense_list}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
+    
+
+def set_alert(username, name, amount, due_date):
+    """Sets an alert for a user."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO alerts (username, name, amount, due_date) VALUES (?, ?, ?, ?)", 
+                           (username, name, amount, due_date))
+            conn.commit()
+            return {"success": True, "message": "Alert set successfully."}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
+
+def get_alerts(username):
+    """Fetches all alerts for a specific user."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, amount, due_date FROM alerts WHERE username = ?", (username,))
+            alerts = cursor.fetchall()
+
+            if not alerts:
+                return {"success": True, "alerts": []}  # Return empty list if no alerts found
+
+            alert_list = [
+                {"id": row[0], "name": row[1], "amount": row[2], "due_date": row[3]}
+                for row in alerts
+            ]
+
+            return {"success": True, "alerts": alert_list}
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}

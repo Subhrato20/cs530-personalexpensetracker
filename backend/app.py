@@ -67,18 +67,12 @@ def get_expenses():
 @app.route('/api/upload_expense', methods=['POST'])
 def upload_expense():
     """
-    Upload a receipt image, extract structured data using LLM, and save it to the expenses database.
-    Expected form fields:
-      - 'username' (string)
-      - 'file' (receipt image)
-    """
+    Upload a receipt image, extract structured data using LLM, and save it to the expenses database."""
 
-    # 1) Validate username input
     username = request.form.get('username') or (request.json.get('username') if request.is_json else None)
     if not username:
         return jsonify({"success": False, "message": "Username is required"}), 400
 
-    # 2) Validate file input
     if 'file' not in request.files:
         return jsonify({"success": False, "message": "No image file provided."}), 400
 
@@ -86,11 +80,9 @@ def upload_expense():
     if image_file.filename == '':
         return jsonify({"success": False, "message": "Empty file name."}), 400
 
-    # 3) Convert Image to Base64
-    image_data = image_file.read()  # Read binary data
-    image_base64 = base64.b64encode(image_data).decode('utf-8')  # Convert to Base64 string
+    image_data = image_file.read() 
+    image_base64 = base64.b64encode(image_data).decode('utf-8')
 
-    # 4) Extract structured details from the receipt using the LLM
     details = extract_receipt_details(image_base64)
     if 'error' in details:
         return jsonify({
@@ -99,13 +91,11 @@ def upload_expense():
             "details": details.get("details")
         }), 500
 
-    # 5) Validate extracted details
     required_fields = ["amount", "category", "date", "name"]
     for field in required_fields:
         if field not in details:
             return jsonify({"success": False, "message": f"Missing '{field}' in extracted data."}), 400
 
-    # 6) Insert the extracted data into the database
     result = db_handler.add_expense(
         username=username,
         name=details["name"],
@@ -115,6 +105,30 @@ def upload_expense():
     )
 
     return jsonify(result), (200 if result.get("success") else 400)
+
+
+@app.route('/api/set_alert', methods=['POST'])
+def set_alert():
+    data = request.get_json()
+
+    required_fields = ['username', 'name', 'amount', 'due_date']
+    missing_fields = [field for field in required_fields if field not in data or not data[field]]
+
+    if missing_fields:
+        return jsonify({"success": False, "message": f"Missing fields: {', '.join(missing_fields)}"}), 400
+
+    result = db_handler.set_alert(data['username'], data['name'], data['amount'], data['due_date'])
+    return jsonify(result)
+
+@app.route('/api/get_alerts', methods=['GET'])
+def get_alerts():
+    username = request.args.get('username')
+
+    if not username:
+        return jsonify({"success": False, "message": "Username is required."}), 400
+
+    result = db_handler.get_alerts(username)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
