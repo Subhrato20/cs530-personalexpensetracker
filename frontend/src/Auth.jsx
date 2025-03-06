@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Auth.css";
-import Home from "./Home"; // Import Home Component
+import logo from "./assets/logo.png"; // Logo at the top
+import loginImage from "./assets/signin.jpg"; // Right-side image
 
 const Auth = () => {
-  const [isSignup, setIsSignup] = useState(false);
-  const [formData, setFormData] = useState({ username: "", name: "", email: "", password: "" });
-  const [message, setMessage] = useState("");
-  const [loggedInUser, setLoggedInUser] = useState(localStorage.getItem("loggedInUser") || null); // Retrieve from localStorage
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (loggedInUser) {
-      localStorage.setItem("loggedInUser", loggedInUser); // Store user in localStorage
-    }
-  }, [loggedInUser]);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,62 +22,77 @@ const Auth = () => {
     e.preventDefault();
     setMessage("");
 
-    const url = isSignup ? "http://127.0.0.1:5000/api/signup" : "http://127.0.0.1:5000/api/signin";
-    const payload = isSignup
-      ? { username: formData.username, name: formData.name, email: formData.email, password: formData.password }
-      : { username: formData.username, email: formData.email, password: formData.password };
-
     try {
-      const response = await fetch(url, {
+      const response = await fetch("http://127.0.0.1:5000/api/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
-      setMessage(data.message);
 
       if (data.success) {
-        setLoggedInUser(formData.username); // Store logged-in user
-        localStorage.setItem("loggedInUser", formData.username); // Save in localStorage
-        setMessage(""); // Clear success message after login
+        localStorage.setItem("loggedInUser", formData.username);
+        navigate("/home"); // Redirect to Home Page after successful login
+      } else {
+        setMessage(data.message);
       }
     } catch (error) {
       setMessage("Something went wrong. Please try again.");
     }
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    setLoggedInUser(null);
-    localStorage.removeItem("loggedInUser"); // Clear localStorage
-    setMessage(""); // Clear messages
-    setFormData({ username: "", name: "", email: "", password: "" }); // Reset form
-  };
-
-  if (loggedInUser) {
-    return <Home username={loggedInUser} onLogout={handleLogout} />;
-  }
-
   return (
-    <div className="auth-container">
-      <h2>{isSignup ? "Sign Up" : "Log In"}</h2>
-      <form onSubmit={handleSubmit}>
-        {isSignup && <input type="text" name="name" placeholder="Full Name" onChange={handleChange} required />}
-        <input type="text" name="username" placeholder="Username" onChange={handleChange} required />
-        {isSignup && <input type="email" name="email" placeholder="Email" onChange={handleChange} required />}
-        <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
-        <button type="submit">{isSignup ? "Sign Up" : "Log In"}</button>
-      </form>
+    <div className="auth-page">
+      {/* Left Side: Login Form */}
+      <div className="auth-container">
+        <div className="logo-container">
+          <img
+            src={logo}
+            alt="PennyWise Logo"
+            className="logo-icon"
+            onClick={() => navigate("/")} // Redirect to Landing Page
+            style={{ cursor: "pointer" }}
+          />
+          <h1 className="logo-text">PennyWise</h1>
+        </div>
 
-      <p>
-        {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-        <button className="toggle-btn" onClick={() => { setIsSignup(!isSignup); setMessage(""); }}>
-          {isSignup ? "Log In" : "Sign Up"}
-        </button>
-      </p>
+        <h2>Welcome Back!</h2>
 
-      {message && <p className="message">{message}</p>}
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button type="submit">Log In</button>
+        </form>
+
+        {message && <p className="error-message">{message}</p>}
+
+        <p>
+          Don't have an account?{" "}
+          <button className="link-btn" onClick={() => navigate("/signup")}>
+            Sign Up
+          </button>
+        </p>
+      </div>
+
+      {/* Right Side: Image */}
+      <div className="auth-image-container">
+        <img src={loginImage} alt="Finance Illustration" className="auth-image" />
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css"; // Import CSS for styling
 
-const Home = ({ username, onLogout }) => {
+const Home = ({ onLogout }) => {
   const [expenses, setExpenses] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -11,6 +11,9 @@ const Home = ({ username, onLogout }) => {
   });
   const [message, setMessage] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
+
+  // ✅ Retrieve username correctly
+  const username = localStorage.getItem("loggedInUser");
 
   useEffect(() => {
     if (username) {
@@ -50,10 +53,11 @@ const Home = ({ username, onLogout }) => {
       });
 
       const data = await response.json();
-      setMessage(data.message);
       if (data.success) {
-        fetchExpenses();
+        fetchExpenses(); // ✅ Refresh expenses list
         setFormData({ name: "", amount: "", category: "", date: "" });
+      } else {
+        setMessage(data.message);
       }
     } catch (error) {
       setMessage("Error adding expense.");
@@ -80,7 +84,7 @@ const Home = ({ username, onLogout }) => {
       setUploadMessage(data.message);
 
       if (data.success) {
-        fetchExpenses(); // Refresh expenses list after successful upload
+        fetchExpenses(); // ✅ Refresh expenses list after successful upload
       }
     } catch (error) {
       setUploadMessage("Error uploading receipt.");
@@ -88,14 +92,15 @@ const Home = ({ username, onLogout }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("loggedInUser"); // Ensure storage is cleared
-    onLogout();
+    localStorage.removeItem("loggedInUser"); // Clear session
+    onLogout(); // Update state
+    window.location.href = "/"; // ✅ Redirect to Landing Page
   };
 
   return (
     <div className="home-container">
       <div className="header">
-        <h2>Welcome, {username}!</h2>
+        <h2>Welcome, {username ? username : "Guest"}!</h2> {/* ✅ Show correct username */}
         <button className="logout-btn" onClick={handleLogout}>Log Out</button>
       </div>
 
@@ -133,8 +138,8 @@ const Home = ({ username, onLogout }) => {
               </thead>
               <tbody>
                 {expenses.length > 0 ? (
-                  expenses.map((expense) => (
-                    <tr key={expense.id}>
+                  expenses.map((expense, index) => (
+                    <tr key={index}>
                       <td>{expense.name}</td>
                       <td>${expense.amount}</td>
                       <td>{expense.category}</td>
