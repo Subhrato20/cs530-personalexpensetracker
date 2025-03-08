@@ -157,21 +157,6 @@ const Home = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Summary Section */}
-      <div className="summary-section">
-        <h3>Summary</h3>
-        <select onChange={(e) => setFilterYear(e.target.value)} value={filterYear}>
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
-        </select>
-        <div className="category-bar">
-          <button>Dining</button>
-          <button>Grocery</button>
-          <button>Travel</button>
-        </div>
-      </div>
-
       {/* Transactions Table */}
       <div className="expense-table-container">
         <h3>Transactions</h3>

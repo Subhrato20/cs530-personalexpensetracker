@@ -3,7 +3,8 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
+  background-color: #f9f9f9;
+  color: #000;
 }
 
 /* Main Container */
@@ -20,11 +21,12 @@ body {
   align-items: center;
   background: #fff;
   padding: 15px 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .header h2 {
   margin: 0;
+  color: #000;
 }
 
 .menu-btn {
@@ -35,19 +37,6 @@ body {
   padding: 5px 10px;
 }
 
-.logout-btn {
-  padding: 8px 15px;
-  background-color: #d9534f;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.logout-btn:hover {
-  background-color: #c9302c;
-}
-
 /* Sidebar Navigation */
 .sidebar {
   position: fixed;
@@ -55,7 +44,7 @@ body {
   top: 0;
   width: 250px;
   height: 100%;
-  background: white;
+  background: #fff;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   transition: 0.3s ease-in-out;
   padding: 20px;
@@ -67,6 +56,7 @@ body {
 
 .sidebar h2 {
   text-align: center;
+  color: #000;
 }
 
 .sidebar ul {
@@ -81,7 +71,7 @@ body {
 }
 
 .sidebar ul li:hover {
-  background: #f4f4f4;
+  background: #e6e6e6;
 }
 
 .close-btn {
@@ -90,36 +80,6 @@ body {
   background: none;
   cursor: pointer;
   float: right;
-}
-
-/* Summary Section */
-.summary-section {
-  background: white;
-  padding: 15px;
-  margin: 20px 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.summary-section h3 {
-  margin: 0 0 10px;
-}
-
-.category-bar {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-}
-
-.category-bar button {
-  border: none;
-  padding: 8px 15px;
-  cursor: pointer;
-  background: #ddd;
-  transition: 0.3s;
-}
-
-.category-bar button:hover {
-  background: #ccc;
 }
 
 /* Search Bar */
@@ -131,20 +91,23 @@ body {
 
 .search-container input {
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #000;
   border-radius: 5px;
   width: 200px;
+  background: #fff;
+  color: #000;
 }
 
 /* Expense Table */
 .expense-table-container {
-  background: white;
+  background: #fff;
   padding: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .expense-table-container h3 {
   margin-top: 0;
+  color: #000;
 }
 
 table {
@@ -154,12 +117,12 @@ table {
 
 th, td {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid #000;
   text-align: left;
 }
 
 th {
-  background: #4285F4;
+  background: #000;
   color: white;
 }
 
@@ -167,16 +130,16 @@ th {
 .add-line-btn {
   margin-top: 15px;
   padding: 10px;
-  border: none;
+  border: 1px solid #000;
   border-radius: 5px;
-  background-color: #4CAF50;
+  background-color: #000;
   color: white;
   cursor: pointer;
   font-size: 14px;
 }
 
 .add-line-btn:hover {
-  background-color: #45a049;
+  background-color: #333;
 }
 
 /* Modal */
@@ -186,76 +149,7 @@ th {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  width: 400px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.modal-content h3 {
-  margin-top: 0;
-}
-
-.modal-content form {
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-content input {
-  padding: 8px;
-  margin: 8px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.modal-content button {
-  margin-top: 10px;
-  padding: 8px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.modal-content button[type="submit"] {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.modal-content button[type="button"] {
-  background: #d9534f;
-  color: white;
-}
-
-.modal-content button[type="button"]:hover {
-  background: #c9302c;
-}
-
-.logo-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.logo {
-    height: 40px; /* Adjust size as needed */
-    width: auto;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -278,11 +172,25 @@ th {
 button {
   margin-top: 10px;
   padding: 8px;
-  border: none;
+  border: 1px solid #000;
   border-radius: 5px;
   cursor: pointer;
+  background: #fff;
+  color: #000;
 }
 
 button:hover {
-  background-color: #ccc;
+  background-color: #e6e6e6;
+}
+
+/* Logo Container */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
 }
