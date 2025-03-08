@@ -82,21 +82,48 @@ body {
   float: right;
 }
 
-/* Search Bar */
-.search-container {
+/* Search & Sort Container */
+.search-sort-container {
   display: flex;
-  justify-content: flex-end;
-  margin: 15px 0;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #000;
 }
 
-.search-container input {
+.search-bar {
   padding: 8px;
   border: 1px solid #000;
   border-radius: 5px;
-  width: 200px;
+  width: 250px;
   background: #fff;
   color: #000;
 }
+
+.sort-dropdown {
+  padding: 8px;
+  border: 1px solid #000;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #fff;
+  color: #000;
+}
+
+.sort-btn {
+  padding: 8px;
+  border: 1px solid #000;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #000;
+  color: white;
+}
+
+.sort-btn:hover {
+  background: #333;
+}
+
 
 /* Expense Table */
 .expense-table-container {

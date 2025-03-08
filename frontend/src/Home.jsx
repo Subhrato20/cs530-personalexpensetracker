@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css";
-import logo from "./assets/logo.png";  // Ensure this path is correct
+import logo from "./assets/logo.png";
 
 const Home = ({ onLogout }) => {
   const [expenses, setExpenses] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    category: "",
-    date: "",
-  });
-  const [message, setMessage] = useState("");
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterYear, setFilterYear] = useState("2025");
+  const [sortField, setSortField] = useState("date");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   // Retrieve username
   const username = localStorage.getItem("loggedInUser");
@@ -27,7 +17,7 @@ const Home = ({ onLogout }) => {
     }
   }, [username]);
 
-  // Fetch Expenses
+  // Fetch Expenses and Format Dates
   const fetchExpenses = async () => {
     try {
       const response = await fetch(
@@ -36,130 +26,87 @@ const Home = ({ onLogout }) => {
       const data = await response.json();
 
       if (data.success) {
-        // Format dates to MM-DD-YY
-        const formattedExpenses = data.expenses.map(expense => {
+        const formattedExpenses = data.expenses.map((expense) => {
           let dateObj = new Date(expense.date);
           let formattedDate = `${
             ("0" + (dateObj.getMonth() + 1)).slice(-2)
-          }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj.getFullYear().toString().slice(-2)}`;
+          }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj
+            .getFullYear()
+            .toString()
+            .slice(-2)}`;
 
           return { ...expense, date: formattedDate };
         });
 
         setExpenses(formattedExpenses);
-      } else {
-        setMessage(data.message);
       }
     } catch (error) {
-      setMessage("Error fetching expenses.");
+      console.error("Error fetching expenses:", error);
     }
   };
 
-  // Handle Input Change
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Handle Search
+  const filteredExpenses = expenses.filter((expense) =>
+    expense.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  // Handle Manual Expense Submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+  // Handle Sorting
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => {
+    let valueA, valueB;
 
-    const payload = { ...formData, username };
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/api/add_expense", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        fetchExpenses();
-        setFormData({ name: "", amount: "", category: "", date: "" });
-        setIsModalOpen(false); // Close modal on success
-      } else {
-        setMessage(data.message);
-      }
-    } catch (error) {
-      setMessage("Error adding expense.");
+    if (sortField === "date") {
+      valueA = new Date(a.date);
+      valueB = new Date(b.date);
+    } else {
+      valueA = a.name.toLowerCase();
+      valueB = b.name.toLowerCase();
     }
-  };
 
-  // Upload Receipt
-  const handleUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setUploadMessage("Uploading receipt...");
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("username", username);
-
-    try {
-      const response = await fetch(
-        "http://127.0.0.1:5000/api/upload_expense",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-      setUploadMessage(data.message);
-
-      if (data.success) {
-        fetchExpenses();
-        setTimeout(() => setIsUploadModalOpen(false), 1000); // Auto-close modal after success
-      }
-    } catch (error) {
-      setUploadMessage("Error uploading receipt.");
-    }
-  };
-
-  // Logout
-  const handleLogout = () => {
-    localStorage.removeItem("loggedInUser");
-    window.location.href = "/";
-  };
+    return sortOrder === "asc" ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
+  });
 
   return (
     <div className="home-container">
-      {/* Sidebar */}
-      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-        <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
-          ×
-        </button>
-        <h2>PennyWise</h2>
-        <ul>
-          <li>Home</li>
-          <li>Profile</li>
-          <li>Set Alerts</li>
-          <li onClick={() => setIsUploadModalOpen(true)}>Upload Receipt</li>
-          <li>Link Bank (Coming Soon)</li>
-          <li>Settings</li>
-        </ul>
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
-      </div>
-
       {/* Header */}
       <div className="header">
-        <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
-          ☰
-        </button>
+        <button className="menu-btn">☰</button>
         <div className="logo-container">
           <img src={logo} alt="PennyWise Logo" className="logo" />
           <h2>PennyWise</h2>
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {/* Transactions Table with Search & Sort on Top */}
       <div className="expense-table-container">
         <h3>Transactions</h3>
+
+        {/* Search & Sort Controls */}
+        <div className="search-sort-container">
+          <input
+            type="text"
+            placeholder="Search transactions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-bar"
+          />
+
+          <select
+            className="sort-dropdown"
+            onChange={(e) => setSortField(e.target.value)}
+          >
+            <option value="date">Sort by Date</option>
+            <option value="name">Sort by Name</option>
+          </select>
+
+          <button
+            className="sort-btn"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          >
+            {sortOrder === "asc" ? "⬆ Asc" : "⬇ Desc"}
+          </button>
+        </div>
+
+        {/* Transactions Table */}
         <table>
           <thead>
             <tr>
@@ -170,43 +117,17 @@ const Home = ({ onLogout }) => {
             </tr>
           </thead>
           <tbody>
-            {expenses
-              .filter((expense) =>
-                expense.name.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map((expense, index) => (
-                <tr key={index}>
-                  <td>{expense.name}</td>
-                  <td>${expense.amount}</td>
-                  <td>{expense.category}</td>
-                  <td>{expense.date}</td>
-                </tr>
-              ))}
+            {sortedExpenses.map((expense, index) => (
+              <tr key={index}>
+                <td>{expense.name}</td>
+                <td>${expense.amount}</td>
+                <td>{expense.category}</td>
+                <td>{expense.date}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* Add Line Button */}
-      <button className="add-line-btn" onClick={() => setIsModalOpen(true)}>
-        Add Line
-      </button>
-
-      {/* Upload Receipt Modal */}
-      {isUploadModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Upload Receipt</h3>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              className="upload-input"
-            />
-            {uploadMessage && <p className="message">{uploadMessage}</p>}
-            <button onClick={() => setIsUploadModalOpen(false)}>Close</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
