@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css";
-import logo from "./assets/logo.png";  // Adjust the path based on your file structure
-
+import logo from "./assets/logo.png";  // Ensure this path is correct
 
 const Home = ({ onLogout }) => {
   const [expenses, setExpenses] = useState([]);
@@ -15,6 +14,7 @@ const Home = ({ onLogout }) => {
   const [uploadMessage, setUploadMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterYear, setFilterYear] = useState("2025");
 
@@ -29,32 +29,31 @@ const Home = ({ onLogout }) => {
 
   // Fetch Expenses
   const fetchExpenses = async () => {
-      try {
-          const response = await fetch(
-              `http://127.0.0.1:5000/api/get_expenses?username=${username}`
-          );
-          const data = await response.json();
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/get_expenses?username=${username}`
+      );
+      const data = await response.json();
 
-          if (data.success) {
-              // Format dates to MM-DD-YY
-              const formattedExpenses = data.expenses.map(expense => {
-                  let dateObj = new Date(expense.date);
-                  let formattedDate = `${
-                      ("0" + (dateObj.getMonth() + 1)).slice(-2)
-                  }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj.getFullYear().toString().slice(-2)}`;
+      if (data.success) {
+        // Format dates to MM-DD-YY
+        const formattedExpenses = data.expenses.map(expense => {
+          let dateObj = new Date(expense.date);
+          let formattedDate = `${
+            ("0" + (dateObj.getMonth() + 1)).slice(-2)
+          }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj.getFullYear().toString().slice(-2)}`;
 
-                  return { ...expense, date: formattedDate };
-              });
+          return { ...expense, date: formattedDate };
+        });
 
-              setExpenses(formattedExpenses);
-          } else {
-              setMessage(data.message);
-          }
-      } catch (error) {
-          setMessage("Error fetching expenses.");
+        setExpenses(formattedExpenses);
+      } else {
+        setMessage(data.message);
       }
+    } catch (error) {
+      setMessage("Error fetching expenses.");
+    }
   };
-
 
   // Handle Input Change
   const handleChange = (e) => {
@@ -113,6 +112,7 @@ const Home = ({ onLogout }) => {
 
       if (data.success) {
         fetchExpenses();
+        setTimeout(() => setIsUploadModalOpen(false), 1000); // Auto-close modal after success
       }
     } catch (error) {
       setUploadMessage("Error uploading receipt.");
@@ -137,7 +137,7 @@ const Home = ({ onLogout }) => {
           <li>Home</li>
           <li>Profile</li>
           <li>Set Alerts</li>
-          <li>Upload Receipt</li>
+          <li onClick={() => setIsUploadModalOpen(true)}>Upload Receipt</li>
           <li>Link Bank (Coming Soon)</li>
           <li>Settings</li>
         </ul>
@@ -148,15 +148,14 @@ const Home = ({ onLogout }) => {
 
       {/* Header */}
       <div className="header">
-          <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
-              ☰
-          </button>
-          <div className="logo-container">
-              <img src={logo} alt="PennyWise Logo" className="logo" />
-              <h2>PennyWise</h2>
-          </div>
+        <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
+          ☰
+        </button>
+        <div className="logo-container">
+          <img src={logo} alt="PennyWise Logo" className="logo" />
+          <h2>PennyWise</h2>
+        </div>
       </div>
-
 
       {/* Summary Section */}
       <div className="summary-section">
@@ -171,16 +170,6 @@ const Home = ({ onLogout }) => {
           <button>Grocery</button>
           <button>Travel</button>
         </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search transactions..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
       </div>
 
       {/* Transactions Table */}
@@ -217,48 +206,19 @@ const Home = ({ onLogout }) => {
         Add Line
       </button>
 
-      {/* Modal for Manual Expense Entry */}
-      {isModalOpen && (
+      {/* Upload Receipt Modal */}
+      {isUploadModalOpen && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Add Expense</h3>
-            <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                name="name"
-                placeholder="Expense Name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="number"
-                name="amount"
-                placeholder="Amount"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="category"
-                placeholder="Category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
-              />
-              <button type="submit">Add Expense</button>
-              <button type="button" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </button>
-            </form>
+            <h3>Upload Receipt</h3>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleUpload}
+              className="upload-input"
+            />
+            {uploadMessage && <p className="message">{uploadMessage}</p>}
+            <button onClick={() => setIsUploadModalOpen(false)}>Close</button>
           </div>
         </div>
       )}
