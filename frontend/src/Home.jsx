@@ -144,7 +144,6 @@ const Home = ({ onLogout }) => {
             Upload Receipt
           </li>
           <li>Link Bank (Coming Soon)</li>
-          <li>Settings</li>
         </ul>
         <button className="logout-btn" onClick={handleLogout}>
           Logout
