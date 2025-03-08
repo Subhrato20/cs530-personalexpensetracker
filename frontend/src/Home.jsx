@@ -22,47 +22,65 @@ const Home = ({ onLogout }) => {
   }, [username]);
 
   const fetchExpenses = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5000/api/get_expenses?username=${username}`);
-      const data = await response.json();
-      if (data.success) {
-        setExpenses(data.expenses);
-      } else {
-        setMessage(data.message);
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/get_expenses?username=${username}`);
+        const data = await response.json();
+        if (data.success) {
+          // Convert all dates to MM-DD-YY format
+          const formattedExpenses = data.expenses.map(expense => ({
+            ...expense,
+            date: new Date(expense.date).toLocaleDateString("en-US", {
+              year: "2-digit",
+              month: "2-digit",
+              day: "2-digit",
+            }),
+          }));
+          setExpenses(formattedExpenses);
+        } else {
+          setMessage(data.message);
+        }
+      } catch (error) {
+        setMessage("Error fetching expenses.");
       }
-    } catch (error) {
-      setMessage("Error fetching expenses.");
-    }
   };
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+      e.preventDefault();
+      setMessage("");
 
-    const payload = { ...formData, username };
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/api/add_expense", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      // Convert YYYY-MM-DD to MM-DD-YY before sending
+      const formattedDate = new Date(formData.date).toLocaleDateString("en-US", {
+          year: "2-digit",
+          month: "2-digit",
+          day: "2-digit",
       });
 
-      const data = await response.json();
-      if (data.success) {
-        fetchExpenses(); // ✅ Refresh expenses list
-        setFormData({ name: "", amount: "", category: "", date: "" });
-      } else {
-        setMessage(data.message);
+      const payload = { ...formData, date: formattedDate, username };
+
+      try {
+          const response = await fetch("http://127.0.0.1:5000/api/add_expense", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+              fetchExpenses(); // Refresh expenses list after adding
+              setFormData({ name: "", amount: "", category: "", date: "" });
+          } else {
+              setMessage(data.message);
+          }
+      } catch (error) {
+          setMessage("Error adding expense.");
       }
-    } catch (error) {
-      setMessage("Error adding expense.");
-    }
   };
+
 
   const handleUpload = async (event) => {
     const file = event.target.files[0];
