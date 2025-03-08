@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import "./Home.css"; // Import CSS for styling
+import "./Home.css";
+import logo from "./assets/logo.png";  // Adjust the path based on your file structure
+
 
 const Home = ({ onLogout }) => {
   const [expenses, setExpenses] = useState([]);
@@ -11,8 +13,12 @@ const Home = ({ onLogout }) => {
   });
   const [message, setMessage] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterYear, setFilterYear] = useState("2025");
 
-  // ✅ Retrieve username correctly
+  // Retrieve username
   const username = localStorage.getItem("loggedInUser");
 
   useEffect(() => {
@@ -21,67 +27,68 @@ const Home = ({ onLogout }) => {
     }
   }, [username]);
 
+  // Fetch Expenses
   const fetchExpenses = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/get_expenses?username=${username}`);
-        const data = await response.json();
-        if (data.success) {
-          // Convert all dates to MM-DD-YY format
-          const formattedExpenses = data.expenses.map(expense => ({
-            ...expense,
-            date: new Date(expense.date).toLocaleDateString("en-US", {
-              year: "2-digit",
-              month: "2-digit",
-              day: "2-digit",
-            }),
-          }));
-          setExpenses(formattedExpenses);
-        } else {
-          setMessage(data.message);
-        }
-      } catch (error) {
-        setMessage("Error fetching expenses.");
-      }
-  };
-
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-      e.preventDefault();
-      setMessage("");
-
-      // Convert YYYY-MM-DD to MM-DD-YY before sending
-      const formattedDate = new Date(formData.date).toLocaleDateString("en-US", {
-          year: "2-digit",
-          month: "2-digit",
-          day: "2-digit",
-      });
-
-      const payload = { ...formData, date: formattedDate, username };
-
-      try {
-          const response = await fetch("http://127.0.0.1:5000/api/add_expense", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-          });
-
+          const response = await fetch(
+              `http://127.0.0.1:5000/api/get_expenses?username=${username}`
+          );
           const data = await response.json();
+
           if (data.success) {
-              fetchExpenses(); // Refresh expenses list after adding
-              setFormData({ name: "", amount: "", category: "", date: "" });
+              // Format dates to MM-DD-YY
+              const formattedExpenses = data.expenses.map(expense => {
+                  let dateObj = new Date(expense.date);
+                  let formattedDate = `${
+                      ("0" + (dateObj.getMonth() + 1)).slice(-2)
+                  }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj.getFullYear().toString().slice(-2)}`;
+
+                  return { ...expense, date: formattedDate };
+              });
+
+              setExpenses(formattedExpenses);
           } else {
               setMessage(data.message);
           }
       } catch (error) {
-          setMessage("Error adding expense.");
+          setMessage("Error fetching expenses.");
       }
   };
 
 
+  // Handle Input Change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle Manual Expense Submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    const payload = { ...formData, username };
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/add_expense", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        fetchExpenses();
+        setFormData({ name: "", amount: "", category: "", date: "" });
+        setIsModalOpen(false); // Close modal on success
+      } else {
+        setMessage(data.message);
+      }
+    } catch (error) {
+      setMessage("Error adding expense.");
+    }
+  };
+
+  // Upload Receipt
   const handleUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -93,87 +100,168 @@ const Home = ({ onLogout }) => {
     formData.append("username", username);
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/upload_expense", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/upload_expense",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       setUploadMessage(data.message);
 
       if (data.success) {
-        fetchExpenses(); // ✅ Refresh expenses list after successful upload
+        fetchExpenses();
       }
     } catch (error) {
       setUploadMessage("Error uploading receipt.");
     }
   };
 
+  // Logout
   const handleLogout = () => {
-    localStorage.removeItem("loggedInUser"); // Clear session
-    onLogout(); // Update state
-    window.location.href = "/"; // ✅ Redirect to Landing Page
+    localStorage.removeItem("loggedInUser");
+    window.location.href = "/";
   };
 
   return (
     <div className="home-container">
-      <div className="header">
-        <h2>Welcome, {username ? username : "Guest"}!</h2> {/* ✅ Show correct username */}
-        <button className="logout-btn" onClick={handleLogout}>Log Out</button>
+      {/* Sidebar */}
+      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
+          ×
+        </button>
+        <h2>PennyWise</h2>
+        <ul>
+          <li>Home</li>
+          <li>Profile</li>
+          <li>Set Alerts</li>
+          <li>Upload Receipt</li>
+          <li>Link Bank (Coming Soon)</li>
+          <li>Settings</li>
+        </ul>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
       </div>
 
-      <div className="content">
-        {/* Left Side - Expense Form */}
-        <div className="expense-form-container">
-          <h3>Add New Expense</h3>
-          <form onSubmit={handleSubmit} className="expense-form">
-            <input type="text" name="name" placeholder="Expense Name" value={formData.name} onChange={handleChange} required />
-            <input type="number" name="amount" placeholder="Amount" value={formData.amount} onChange={handleChange} required />
-            <input type="text" name="category" placeholder="Category" value={formData.category} onChange={handleChange} required />
-            <input type="date" name="date" value={formData.date} onChange={handleChange} required />
-            <button type="submit">Add Expense</button>
-          </form>
-          {message && <p className="message">{message}</p>}
+      {/* Header */}
+      <div className="header">
+          <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
+              ☰
+          </button>
+          <div className="logo-container">
+              <img src={logo} alt="PennyWise Logo" className="logo" />
+              <h2>PennyWise</h2>
+          </div>
+      </div>
 
-          {/* Upload Receipt Button */}
-          <h3>Upload Receipt</h3>
-          <input type="file" accept="image/*" onChange={handleUpload} className="upload-input" />
-          {uploadMessage && <p className="message">{uploadMessage}</p>}
+
+      {/* Summary Section */}
+      <div className="summary-section">
+        <h3>Summary</h3>
+        <select onChange={(e) => setFilterYear(e.target.value)} value={filterYear}>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+        <div className="category-bar">
+          <button>Dining</button>
+          <button>Grocery</button>
+          <button>Travel</button>
         </div>
+      </div>
 
-        {/* Right Side - Expenses Table */}
-        <div className="expense-table-container">
-          <h3>Your Expenses</h3>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Amount</th>
-                  <th>Category</th>
-                  <th>Date</th>
+      {/* Search Bar */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search transactions..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Transactions Table */}
+      <div className="expense-table-container">
+        <h3>Transactions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Amount</th>
+              <th>Category</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses
+              .filter((expense) =>
+                expense.name.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((expense, index) => (
+                <tr key={index}>
+                  <td>{expense.name}</td>
+                  <td>${expense.amount}</td>
+                  <td>{expense.category}</td>
+                  <td>{expense.date}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {expenses.length > 0 ? (
-                  expenses.map((expense, index) => (
-                    <tr key={index}>
-                      <td>{expense.name}</td>
-                      <td>${expense.amount}</td>
-                      <td>{expense.category}</td>
-                      <td>{expense.date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4">No expenses added yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add Line Button */}
+      <button className="add-line-btn" onClick={() => setIsModalOpen(true)}>
+        Add Line
+      </button>
+
+      {/* Modal for Manual Expense Entry */}
+      {isModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Add Expense</h3>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="name"
+                placeholder="Expense Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="number"
+                name="amount"
+                placeholder="Amount"
+                value={formData.amount}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="text"
+                name="category"
+                placeholder="Category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+              />
+              <button type="submit">Add Expense</button>
+              <button type="button" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+            </form>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
