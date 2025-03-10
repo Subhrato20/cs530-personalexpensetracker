@@ -13,6 +13,7 @@ const Home = ({ onLogout }) => {
     category: "",
     date: "",
   });
+
   const [message, setMessage] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -20,6 +21,28 @@ const Home = ({ onLogout }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAscending, setIsAscending] = useState(true); // Sorting order
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState({ name: "", username: "", email: "" });
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/api/get_user_info?username=${username}`);
+      const data = await response.json();
+      if (data.success) {
+        setUserInfo({
+          name: data.name,
+          username: username,
+          email: data.email,
+        });
+        setIsProfileOpen(true); // Open modal
+      } else {
+        console.error("Failed to fetch user info");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   // Retrieve username
   const username = localStorage.getItem("loggedInUser");
@@ -220,8 +243,8 @@ const Home = ({ onLogout }) => {
         <h2>PennyWise</h2>
         <ul>
           <li>Home</li>
-          <li>Profile</li>
-          <li>Set Alerts</li>
+          <li onClick={fetchUserProfile}>Profile</li>
+          <li>Set Alerts (Coming Soon)</li>
           <li
             onClick={() => {
               setIsUploadModalOpen(true);
@@ -313,6 +336,19 @@ const Home = ({ onLogout }) => {
           </tbody>
         </table>
       </div>
+
+      {isProfileOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>User Profile</h3>
+            <p><strong>Name:</strong> {userInfo.name}</p>
+            <p><strong>Username:</strong> {userInfo.username}</p>
+            <p><strong>Email:</strong> {userInfo.email}</p>
+            <button onClick={() => setIsProfileOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
 
       {/* Add Line Button */}
       <button
