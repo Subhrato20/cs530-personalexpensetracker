@@ -1,20 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Signup.css";
-import logo from "./assets/logo.png"; // Logo at the top
-import signupImage from "./assets/signup.jpg"; // The right-side image
+import signupImage from "./assets/signup.jpg";
+import Logo from "./components/Logo";
 
 const Signup = () => {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
+  const [formData, setFormData] = useState({ name: "", username: "", email: "", password: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
@@ -30,12 +22,7 @@ const Signup = () => {
       return;
     }
 
-    const payload = {
-      name: formData.name,
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-    };
+    const payload = { name: formData.name, username: formData.username, email: formData.email, password: formData.password };
 
     try {
       const response = await fetch("http://127.0.0.1:5000/api/signup", {
@@ -45,7 +32,6 @@ const Signup = () => {
       });
 
       const data = await response.json();
-
       if (data.success) {
         navigate("/signin");
       } else {
@@ -58,22 +44,9 @@ const Signup = () => {
 
   return (
     <div className="signup-page">
-      {/* Left Side: Signup Form */}
       <div className="signup-container">
-        {/* Updated Header Section */}
-        <div className="logo-container">
-          <img
-            src={logo}
-            alt="PennyWise Logo"
-            className="logo-icon"
-            onClick={() => navigate("/")} // Redirect to Landing Page when clicked
-            style={{ cursor: "pointer" }}
-          />
-          <h1 className="logo-text">PennyWise</h1>
-        </div>
-
+        <Logo />
         <h2>Ready to Start Your Money Saving Journey</h2>
-
         <form onSubmit={handleSubmit} className="signup-form">
           <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
           <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
@@ -92,11 +65,7 @@ const Signup = () => {
           </button>
         </p>
       </div>
-
-      {/* Right Side: Image */}
-      <div className="signup-image-container">
-        <img src={signupImage} alt="Finance Illustration" className="signup-image" />
-      </div>
+      <div className="signup-image-container"><img src={signupImage} alt="Signup Illustration" className="signup-image" /></div>
     </div>
   );
 };
