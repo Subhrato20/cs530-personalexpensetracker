@@ -115,6 +115,22 @@ def signin_user_by_username(username, password):
     except Exception as e:
         return {"success": False, "message": f"Unexpected Error: {str(e)}"}
 
+def get_user_info(username):
+    """Fetches the full name of a user based on their username."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM users WHERE username = ?", (username,))
+            row = cursor.fetchone()
+
+            if row:
+                return {"success": True, "name": row[0]}
+            else:
+                return {"success": False, "message": "User not found."}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
+
 def add_expense(username, name, amount, category, date):
     """Adds an expense for a user."""
     try:

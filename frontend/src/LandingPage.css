@@ -1,0 +1,145 @@
+/* Landing Page Styling */
+.landing-container {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.auth-buttons .btn {
+  margin: 0 10px;
+  padding: 10px 20px;
+  border: none;
+  background: black;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 5px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Hover effect */
+.auth-buttons .btn:hover {
+  background: white;
+  color: black;
+  border: 1px solid black;
+}
+
+/* Main Content */
+.main-content {
+  padding: 40px;
+}
+
+.tagline {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.subtext {
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+/* Features Section */
+.features-section {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.feature {
+  flex: 1;
+  max-width: 200px;
+  min-width: 180px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.feature img {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+}
+
+/* Reviews Section */
+.reviews-section {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.review-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.arrow {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.arrow:hover {
+  color: #007bff;
+}
+
+/* Review Box */
+.review {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 350px;
+  text-align: center;
+}
+
+/* Review Image */
+.review-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-bottom: 5px;
+}
+
+/* Reviewer Name */
+.review-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #333;
+}
