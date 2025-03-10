@@ -34,7 +34,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px 10px;
+  padding: 5px 10px 20px;
 }
 
 /* Sidebar Navigation */
@@ -47,7 +47,7 @@ body {
   background: #fff;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   transition: 0.3s ease-in-out;
-  padding: 20px;
+  padding: 40px;
 }
 
 .sidebar.open {
@@ -114,6 +114,13 @@ body {
   background: #e6e6e6;
 }
 
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
 /* Search Bar */
 .search-container {
   display: flex;
@@ -121,13 +128,37 @@ body {
   margin: 15px 0;
 }
 
-.search-container input {
-  padding: 8px;
+.search-input {
+  padding: 10px;
   border: 1px solid #000;
   border-radius: 5px;
   width: 200px;
-  background: #fff;
-  color: #000;
+  font-size: 16px;
+  height: 40px; /* Uniform height */
+}
+
+.control-btn {
+  padding: 10px 15px;
+  border: none;
+  background: #000;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+  height: 40px; /* Same height as input */
+  transition: background 0.3s;
+}
+
+.control-btn:hover {
+  background: #444;
+}
+
+.reset-btn {
+  background: red; /* Red reset button */
+}
+
+.reset-btn:hover {
+  background: darkred;
 }
 
 /* Expense Table */
@@ -185,15 +216,92 @@ th {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
   background: white;
-  padding: 20px;
-  width: 400px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  padding: 25px;
+  width: 420px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   text-align: center;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  font-size: 22px;
+  color: #000;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+}
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-content input {
+  width: 94%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border 0.3s ease;
+}
+
+.modal-content input:focus {
+  border: 1px solid #000;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.modal-content button[type="submit"] {
+  background: #000;
+  color: white;
+}
+
+.modal-content button[type="submit"]:hover {
+  background: #333;
+}
+
+.modal-content button[type="button"] {
+  background: #ccc;
+  color: black;
+}
+
+.modal-content button[type="button"]:hover {
+  background: #aaa;
+}
+
+.message {
+  margin-top: 10px;
+  font-size: 14px;
+  color: red;
+  font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .modal-content {
+    width: 90%;
+    padding: 20px;
+  }
 }
 
 .upload-input {
@@ -227,3 +335,11 @@ button:hover {
   width: auto;
 }
 
+.welcome-message {
+  text-align: center;
+  font-size: 40px;
+  font-weight: bold;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  color: #333;
+}

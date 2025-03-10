@@ -25,6 +25,16 @@ def signup():
     result = db_handler.signup_user(data['username'], data['name'], data['email'], data['password'])
     return jsonify(result)
 
+@app.route('/api/get_user_info', methods=['GET'])
+def get_user_info():
+    username = request.args.get('username')
+
+    if not username:
+        return jsonify({"success": False, "message": "Username is required."}), 400
+
+    result = db_handler.get_user_info(username)
+    return jsonify(result)
+
 @app.route('/api/signin', methods=['POST'])
 def signin():
     data = request.get_json()

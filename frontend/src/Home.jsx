@@ -3,7 +3,9 @@ import "./Home.css";
 import logo from "./assets/logo.png";  // Ensure this path is correct
 
 const Home = ({ onLogout }) => {
-  const [expenses, setExpenses] = useState([]);
+  const [fullName, setFullName] = useState("");
+  const [expenses, setExpenses] = useState([]); // Original data
+  const [filteredExpenses, setFilteredExpenses] = useState([]); // Displayed data
   const [formData, setFormData] = useState({
     name: "",
     amount: "",
@@ -16,37 +18,59 @@ const Home = ({ onLogout }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterYear, setFilterYear] = useState("2025");
+  const [isAscending, setIsAscending] = useState(true); // Sorting order
 
   // Retrieve username
   const username = localStorage.getItem("loggedInUser");
 
   useEffect(() => {
     if (username) {
+      fetchUserInfo();
       fetchExpenses();
     }
   }, [username]);
 
-  // Fetch Expenses
+  // Fetch the User's Full Name
+  const fetchUserInfo = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/api/get_user_info?username=${username}`);
+      const data = await response.json();
+      if (data.success) {
+        setFullName(data.name);
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+  };
+
+  // Fetch all Expenses (once) and store in state
   const fetchExpenses = async () => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/get_expenses?username=${username}`
-      );
+      const response = await fetch(`http://127.0.0.1:5000/api/get_expenses?username=${username}`);
       const data = await response.json();
 
       if (data.success) {
-        // Format dates to MM-DD-YY
-        const formattedExpenses = data.expenses.map(expense => {
+        // Format dates & store timestamps for sorting
+        const formattedExpenses = data.expenses.map((expense) => {
           let dateObj = new Date(expense.date);
           let formattedDate = `${
             ("0" + (dateObj.getMonth() + 1)).slice(-2)
-          }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj.getFullYear().toString().slice(-2)}`;
+          }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj
+            .getFullYear()
+            .toString()
+            .slice(-2)}`;
 
-          return { ...expense, date: formattedDate };
+          return {
+            ...expense,
+            date: formattedDate,
+            timestamp: dateObj.getTime(),
+          };
         });
 
+        // Default sort: latest first
+        formattedExpenses.sort((a, b) => b.timestamp - a.timestamp);
         setExpenses(formattedExpenses);
+        setFilteredExpenses(formattedExpenses);
       } else {
         setMessage(data.message);
       }
@@ -55,12 +79,12 @@ const Home = ({ onLogout }) => {
     }
   };
 
-  // Handle Input Change
+  // Handle input changes for manual expense addition
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Manual Expense Submission
+  // Handle manual expense submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -76,15 +100,39 @@ const Home = ({ onLogout }) => {
 
       const data = await response.json();
       if (data.success) {
-        fetchExpenses();
+        // Refresh expenses and reset form
+        await fetchExpenses();
         setFormData({ name: "", amount: "", category: "", date: "" });
-        setIsModalOpen(false); // Close modal on success
+        setIsModalOpen(false);
       } else {
         setMessage(data.message);
       }
     } catch (error) {
       setMessage("Error adding expense.");
     }
+  };
+
+  // Sort by date (ascending/descending)
+  const handleSort = () => {
+    const sortedExpenses = [...filteredExpenses].sort((a, b) =>
+      isAscending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
+    );
+    setFilteredExpenses(sortedExpenses);
+    setIsAscending(!isAscending); // Toggle order
+  };
+
+  // Search by Name
+  const handleSearch = () => {
+    const filtered = expenses.filter((expense) =>
+      expense.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredExpenses(filtered);
+  };
+
+  // Reset search and sort (go back to original data)
+  const handleReset = () => {
+    setFilteredExpenses(expenses);
+    setSearchQuery("");
   };
 
   // Upload Receipt
@@ -99,20 +147,17 @@ const Home = ({ onLogout }) => {
     formData.append("username", username);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:5000/api/upload_expense",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch("http://127.0.0.1:5000/api/upload_expense", {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await response.json();
       setUploadMessage(data.message);
 
       if (data.success) {
-        fetchExpenses();
-        setTimeout(() => setIsUploadModalOpen(false), 1000); // Auto-close modal after success
+        await fetchExpenses();
+        setTimeout(() => setIsUploadModalOpen(false), 1000);
       }
     } catch (error) {
       setUploadMessage("Error uploading receipt.");
@@ -122,7 +167,9 @@ const Home = ({ onLogout }) => {
   // Logout
   const handleLogout = () => {
     localStorage.removeItem("loggedInUser");
-    window.location.href = "/";
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 100);
   };
 
   return (
@@ -137,10 +184,12 @@ const Home = ({ onLogout }) => {
           <li>Home</li>
           <li>Profile</li>
           <li>Set Alerts</li>
-          <li onClick={() => {
-            setIsUploadModalOpen(true);
-            setIsModalOpen(false); // Close "Add Line" modal if open
-          }}>
+          <li
+            onClick={() => {
+              setIsUploadModalOpen(true);
+              setIsModalOpen(false); // Close "Add Line" modal if open
+            }}
+          >
             Upload Receipt
           </li>
           <li>Link Bank (Coming Soon)</li>
@@ -161,6 +210,31 @@ const Home = ({ onLogout }) => {
         </div>
       </div>
 
+      {/* Welcome Message */}
+      <div className="welcome-message">
+        <h1>Welcome, {fullName}!</h1>
+      </div>
+
+      {/* Search, Sort, and Reset Controls */}
+      <div className="controls">
+        <input
+          type="text"
+          placeholder="Search by Name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input"
+        />
+        <button className="control-btn search-btn" onClick={handleSearch}>
+          Search
+        </button>
+        <button className="control-btn sort-btn" onClick={handleSort}>
+          Sort by Date {isAscending ? "▲" : "▼"}
+        </button>
+        <button className="control-btn reset-btn" onClick={handleReset}>
+          Reset
+        </button>
+      </div>
+
       {/* Transactions Table */}
       <div className="expense-table-container">
         <h3>Transactions</h3>
@@ -174,28 +248,35 @@ const Home = ({ onLogout }) => {
             </tr>
           </thead>
           <tbody>
-            {expenses
-              .filter((expense) =>
-                expense.name.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map((expense, index) => (
+            {filteredExpenses.length > 0 ? (
+              filteredExpenses.map((expense, index) => (
                 <tr key={index}>
                   <td>{expense.name}</td>
                   <td>${expense.amount}</td>
                   <td>{expense.category}</td>
                   <td>{expense.date}</td>
                 </tr>
-              ))}
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ textAlign: "center", padding: "10px" }}>
+                  No matching transactions found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Add Line Button */}
-      <button className="add-line-btn" onClick={() => {
-        setIsModalOpen(true);
-        setIsUploadModalOpen(false); // Close upload modal if open
-      }}>
-        Add Line
+      <button
+        className="add-line-btn"
+        onClick={() => {
+          setIsModalOpen(true);
+          setIsUploadModalOpen(false);
+        }}
+      >
+        Add Transaction
       </button>
 
       {/* Add Line Modal */}
@@ -204,13 +285,46 @@ const Home = ({ onLogout }) => {
           <div className="modal-content">
             <h3>Add Expense</h3>
             <form onSubmit={handleSubmit}>
-              <input type="text" name="name" placeholder="Expense Name" value={formData.name} onChange={handleChange} required />
-              <input type="number" name="amount" placeholder="Amount" value={formData.amount} onChange={handleChange} required />
-              <input type="text" name="category" placeholder="Category" value={formData.category} onChange={handleChange} required />
-              <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+              <input
+                type="text"
+                name="name"
+                placeholder="Expense Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="number"
+                name="amount"
+                placeholder="Amount"
+                value={formData.amount}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="text"
+                name="category"
+                placeholder="Category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+              />
               <button type="submit">Add Expense</button>
-              <button type="button" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
             </form>
+            {message && <p className="message">{message}</p>}
           </div>
         </div>
       )}
