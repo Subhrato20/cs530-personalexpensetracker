@@ -5,6 +5,7 @@ import Signup from "./Signup";
 import Auth from "./Auth";
 import Home from "./Home"; 
 import Profile from "./Profile"; // Import Profile Page
+import Threshold from "./Threshold"; // Import the Threshold page
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState(localStorage.getItem("loggedInUser") || null);
@@ -27,6 +28,7 @@ function App() {
         <Route path="/signin" element={<Auth onLogin={handleLogin} />} />
         <Route path="/home" element={<Home username={loggedInUser} onLogout={handleLogout} />} />
         <Route path="/profile" element={<Profile />} /> {/* Added Profile Route */}
+        <Route path="/threshold" element={<Threshold />} />
       </Routes>
     </Router>
   );

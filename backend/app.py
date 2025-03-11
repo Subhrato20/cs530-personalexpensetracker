@@ -127,29 +127,36 @@ def upload_expense():
 
     return jsonify(result), (200 if result.get("success") else 400)
 
-
-@app.route('/api/set_alert', methods=['POST'])
-def set_alert():
+@app.route('/api/set_threshold', methods=['POST'])
+def set_threshold():
     data = request.get_json()
+    username = data.get('username')
+    amount = data.get('amount')
 
-    required_fields = ['username', 'name', 'amount', 'due_date']
-    missing_fields = [field for field in required_fields if field not in data or not data[field]]
+    if not username or amount is None:
+        return jsonify({"success": False, "message": "Username and amount are required."}), 400
 
-    if missing_fields:
-        return jsonify({"success": False, "message": f"Missing fields: {', '.join(missing_fields)}"}), 400
-
-    result = db_handler.set_alert(data['username'], data['name'], data['amount'], data['due_date'])
+    result = db_handler.set_threshold(username, amount)
     return jsonify(result)
 
-@app.route('/api/get_alerts', methods=['GET'])
-def get_alerts():
+@app.route('/api/get_threshold', methods=['GET'])
+def get_threshold():
     username = request.args.get('username')
-
     if not username:
         return jsonify({"success": False, "message": "Username is required."}), 400
 
-    result = db_handler.get_alerts(username)
+    result = db_handler.get_threshold(username)
     return jsonify(result)
+
+@app.route('/api/check_threshold', methods=['GET'])
+def check_threshold():
+    username = request.args.get('username')
+    if not username:
+        return jsonify({"success": False, "message": "Username is required."}), 400
+
+    result = db_handler.check_threshold(username)
+    return jsonify(result)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

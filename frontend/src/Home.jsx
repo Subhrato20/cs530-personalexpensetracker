@@ -26,6 +26,9 @@ const Home = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
+  const [monthlySpent, setMonthlySpent] = useState(0); // NEW: For threshold check
+  const [spendingLimit, setSpendingLimit] = useState(0);
+  const [thresholdExceeded, setThresholdExceeded] = useState(false);
 
   useEffect(() => {
     if (!username) {
@@ -33,6 +36,13 @@ const Home = () => {
     } else {
       fetchUserInfo();
       fetchExpenses();
+      checkThreshold();
+      
+      // Check if Upload Modal should be opened after navigating to Home
+      if (sessionStorage.getItem("openUploadModal") === "true") {
+        setIsUploadModalOpen(true);
+        sessionStorage.removeItem("openUploadModal"); // Remove indicator after opening
+      }
     }
   }, [username, navigate]);
 
@@ -83,6 +93,23 @@ const Home = () => {
       }
     } catch (error) {
       console.error("Error fetching expenses:", error);
+    }
+  };
+
+
+  // NEW: Check if the user has exceeded the spending threshold
+  const checkThreshold = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/api/check_threshold?username=${username}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSpendingLimit(data.threshold);
+        setMonthlySpent(data.total_spent); // Renamed from totalSpent to monthlySpent
+        setThresholdExceeded(data.exceeded);
+      }
+    } catch (error) {
+      console.error("Error checking threshold:", error);
     }
   };
 
@@ -273,8 +300,18 @@ const Home = () => {
   // If totalSpent == 0 (edge case), skip the bar
   // ----------------------------------------------------------------------------------
 
+  const handleUploadReceipt = () => {
+    if (window.location.pathname !== "/home") {
+      sessionStorage.setItem("openUploadModal", "true"); // Store indicator
+      navigate("/home"); // Redirect to Home
+    } else {
+      setIsUploadModalOpen(true); // Directly open modal if already on Home
+    }
+  };
+  
   return (
     <div className="home-container">
+      
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
@@ -284,8 +321,8 @@ const Home = () => {
         <ul>
           <li>Home</li>
           <li onClick={() => navigate("/profile")}>Profile</li>
-          <li>Set Alerts (Coming Soon)</li>
-          <li onClick={() => setIsUploadModalOpen(true)}>Upload Receipt</li>
+          <li onClick={() => navigate("/threshold")}>Set Alerts</li> {/* Updated */}
+          <li onClick={() => handleUploadReceipt()}>Upload Receipt</li>
           <li>Link Bank (Coming Soon)</li>
         </ul>
         <button className="logout-btn" onClick={handleLogout}>
@@ -303,6 +340,13 @@ const Home = () => {
           <h2>PennyWise</h2>
         </div>
       </div>
+
+      {/* Alert Message for Exceeding Spending Limit */}
+      {thresholdExceeded && (
+        <div style={{ color: "red", fontWeight: "bold", textAlign: "center", padding: "10px" }}>
+          ALERT! You have exceeded your monthly spending limit of ${spendingLimit}!
+        </div>
+      )}
 
       {/* Welcome Message */}
       <div className="welcome-message">

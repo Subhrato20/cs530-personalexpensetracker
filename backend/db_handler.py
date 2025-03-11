@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 DATABASE = "users.db"  # Load from local DB for now
 
@@ -31,14 +32,11 @@ def init_db():
             )
         ''')
 
-        # Alerts table
+        # Thresholds table
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS alerts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                name TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS thresholds (
+                username TEXT PRIMARY KEY,
                 amount REAL NOT NULL,
-                due_date TEXT NOT NULL,
                 FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
             )
         ''')
@@ -186,37 +184,52 @@ def delete_expenses(expense_ids):
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
 
-def set_alert(username, name, amount, due_date):
-    """Sets an alert for a user."""
+def set_threshold(username, amount):
+    """Set or update a user's spending threshold."""
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO alerts (username, name, amount, due_date) VALUES (?, ?, ?, ?)",
-                           (username, name, amount, due_date))
+            cursor.execute("INSERT INTO thresholds (username, amount) VALUES (?, ?) ON CONFLICT(username) DO UPDATE SET amount=?",
+                           (username, amount, amount))
             conn.commit()
-            return {"success": True, "message": "Alert set successfully."}
-
+            return {"success": True, "message": "Threshold updated successfully."}
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
 
-
-def get_alerts(username):
-    """Fetches all alerts for a specific user."""
+def get_threshold(username):
+    """Retrieve a user's spending threshold."""
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, name, amount, due_date FROM alerts WHERE username = ?", (username,))
-            alerts = cursor.fetchall()
+            cursor.execute("SELECT amount FROM thresholds WHERE username = ?", (username,))
+            row = cursor.fetchone()
+            if row:
+                return {"success": True, "threshold": row[0]}
+            else:
+                return {"success": False, "message": "No threshold set."}
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
 
-            if not alerts:
-                return {"success": True, "alerts": []}  # Return empty list if no alerts found
+def check_threshold(username):
+    """Check if the user has exceeded their threshold for the current month."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
 
-            alert_list = [
-                {"id": row[0], "name": row[1], "amount": row[2], "due_date": row[3]}
-                for row in alerts
-            ]
+            # Get threshold
+            cursor.execute("SELECT amount FROM thresholds WHERE username = ?", (username,))
+            row = cursor.fetchone()
+            if not row:
+                return {"success": False, "message": "No threshold set."}
+            threshold = row[0]
 
-            return {"success": True, "alerts": alert_list}
+            # Get total expenses for the current month
+            current_month = datetime.now().strftime("%Y-%m")
+            cursor.execute("SELECT SUM(amount) FROM expenses WHERE username = ? AND date LIKE ?", (username, f"{current_month}-%"))
+            total_spent = cursor.fetchone()[0] or 0
+
+            exceeded = total_spent > threshold
+            return {"success": True, "exceeded": exceeded, "total_spent": total_spent, "threshold": threshold}
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}

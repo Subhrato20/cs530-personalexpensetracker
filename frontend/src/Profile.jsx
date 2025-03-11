@@ -73,8 +73,12 @@ const Profile = () => {
         <ul>
           <li onClick={() => navigate("/home")}>Home</li>
           <li>Profile</li>
-          <li>Set Alerts (Coming Soon)</li>
-          <li>Upload Receipt</li>
+          <li onClick={() => navigate("/threshold")}>Set Alerts</li> {/* Updated */}
+          <li onClick={() => {
+              sessionStorage.setItem("openUploadModal", "true");
+              navigate("/home");
+            }}>Upload Receipt
+          </li>
           <li>Link Bank (Coming Soon)</li>
         </ul>
         <button className="logout-btn" onClick={handleLogout}>Logout</button>
