@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import "./Home.css";
 import logo from "./assets/logo.png";
 
-const Home = ({ username, onLogout }) => {
+const Home = () => {
   const navigate = useNavigate();
+  const username = localStorage.getItem("loggedInUser");
 
   const [fullName, setFullName] = useState("");
   const [expenses, setExpenses] = useState([]);
@@ -149,6 +150,14 @@ const Home = ({ username, onLogout }) => {
     );
   };
 
+  const handleLogout = () => {
+    // remove the username from localStorage
+    localStorage.removeItem("loggedInUser");
+  
+    // redirect user to the /signin page
+    navigate("/signin");
+  };
+
   // DELETE selected transactions
   const handleDelete = async () => {
     if (!selectedExpenses.length) return;
@@ -279,7 +288,7 @@ const Home = ({ username, onLogout }) => {
           <li onClick={() => setIsUploadModalOpen(true)}>Upload Receipt</li>
           <li>Link Bank (Coming Soon)</li>
         </ul>
-        <button className="logout-btn" onClick={onLogout}>
+        <button className="logout-btn" onClick={handleLogout}>
           Logout
         </button>
       </div>
