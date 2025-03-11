@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Home.css";
-import logo from "./assets/logo.png";  // Ensure this path is correct
+import logo from "./assets/logo.png";
 
-const Home = ({ onLogout }) => {
+const Home = ({ username, onLogout }) => {
+  const navigate = useNavigate();
+
   const [fullName, setFullName] = useState("");
-  const [expenses, setExpenses] = useState([]); // Original data
-  const [filteredExpenses, setFilteredExpenses] = useState([]); // Displayed data
+  const [expenses, setExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAscending, setIsAscending] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // States for add/delete/upload functionality
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -13,51 +21,26 @@ const Home = ({ onLogout }) => {
     category: "",
     date: "",
   });
-
-  const [message, setMessage] = useState("");
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAscending, setIsAscending] = useState(true); // Sorting order
-
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState({ name: "", username: "", email: "" });
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5000/api/get_user_info?username=${username}`);
-      const data = await response.json();
-      if (data.success) {
-        setUserInfo({
-          name: data.name,
-          username: username,
-          email: data.email,
-        });
-        setIsProfileOpen(true); // Open modal
-      } else {
-        console.error("Failed to fetch user info");
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
-
-  // Retrieve username
-  const username = localStorage.getItem("loggedInUser");
+  const [message, setMessage] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
 
   useEffect(() => {
-    if (username) {
+    if (!username) {
+      navigate("/signin");
+    } else {
       fetchUserInfo();
       fetchExpenses();
     }
-  }, [username]);
+  }, [username, navigate]);
 
-  // Fetch the User's Full Name
+  // Fetch user's full name
   const fetchUserInfo = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/get_user_info?username=${username}`);
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/get_user_info?username=${username}`
+      );
       const data = await response.json();
       if (data.success) {
         setFullName(data.name);
@@ -67,17 +50,18 @@ const Home = ({ onLogout }) => {
     }
   };
 
-  // Fetch all Expenses (once) and store in state
+  // Fetch all expenses
   const fetchExpenses = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/get_expenses?username=${username}`);
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/get_expenses?username=${username}`
+      );
       const data = await response.json();
-
       if (data.success) {
-        // Format dates & store timestamps for sorting
+        // Format and sort by date desc
         const formattedExpenses = data.expenses.map((expense) => {
-          let dateObj = new Date(expense.date);
-          let formattedDate = `${
+          const dateObj = new Date(expense.date);
+          const formattedDate = `${
             ("0" + (dateObj.getMonth() + 1)).slice(-2)
           }-${("0" + dateObj.getDate()).slice(-2)}-${dateObj
             .getFullYear()
@@ -91,24 +75,45 @@ const Home = ({ onLogout }) => {
           };
         });
 
-        // Default sort: latest first
+        // Sort newest first by default
         formattedExpenses.sort((a, b) => b.timestamp - a.timestamp);
         setExpenses(formattedExpenses);
         setFilteredExpenses(formattedExpenses);
-      } else {
-        setMessage(data.message);
       }
     } catch (error) {
-      setMessage("Error fetching expenses.");
+      console.error("Error fetching expenses:", error);
     }
   };
 
-  // Handle input changes for manual expense addition
+  // SORT by date
+  const handleSort = () => {
+    const sortedExpenses = [...filteredExpenses].sort((a, b) =>
+      isAscending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
+    );
+    setFilteredExpenses(sortedExpenses);
+    setIsAscending(!isAscending);
+  };
+
+  // SEARCH by name
+  const handleSearch = () => {
+    const filtered = expenses.filter((expense) =>
+      expense.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredExpenses(filtered);
+  };
+
+  // RESET search
+  const handleReset = () => {
+    setFilteredExpenses(expenses);
+    setSearchQuery("");
+  };
+
+  // Input changes in "Add Transaction" form
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle manual expense submission
+  // ADD transaction
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -124,8 +129,7 @@ const Home = ({ onLogout }) => {
 
       const data = await response.json();
       if (data.success) {
-        // Refresh expenses and reset form
-        await fetchExpenses();
+        await fetchExpenses(); // Refresh
         setFormData({ name: "", amount: "", category: "", date: "" });
         setIsModalOpen(false);
       } else {
@@ -136,24 +140,7 @@ const Home = ({ onLogout }) => {
     }
   };
 
-  // Sort by date (ascending/descending)
-  const handleSort = () => {
-    const sortedExpenses = [...filteredExpenses].sort((a, b) =>
-      isAscending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
-    );
-    setFilteredExpenses(sortedExpenses);
-    setIsAscending(!isAscending); // Toggle order
-  };
-
-  // Search by Name
-  const handleSearch = () => {
-    const filtered = expenses.filter((expense) =>
-      expense.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredExpenses(filtered);
-  };
-
-  // Handle checkbox selection
+  // CHECKBOX for deleting
   const handleCheckboxChange = (expenseId) => {
     setSelectedExpenses((prevSelected) =>
       prevSelected.includes(expenseId)
@@ -162,7 +149,7 @@ const Home = ({ onLogout }) => {
     );
   };
 
-  // Handle delete confirmation
+  // DELETE selected transactions
   const handleDelete = async () => {
     if (!selectedExpenses.length) return;
     const confirmDelete = window.confirm(
@@ -179,9 +166,13 @@ const Home = ({ onLogout }) => {
 
       const data = await response.json();
       if (data.success) {
-        setExpenses(expenses.filter((exp) => !selectedExpenses.includes(exp.id)));
-        setFilteredExpenses(filteredExpenses.filter((exp) => !selectedExpenses.includes(exp.id)));
-        setSelectedExpenses([]); // Clear selection
+        setExpenses((prev) =>
+          prev.filter((exp) => !selectedExpenses.includes(exp.id))
+        );
+        setFilteredExpenses((prev) =>
+          prev.filter((exp) => !selectedExpenses.includes(exp.id))
+        );
+        setSelectedExpenses([]);
       } else {
         alert(data.message);
       }
@@ -190,29 +181,21 @@ const Home = ({ onLogout }) => {
     }
   };
 
-  // Reset search and sort (go back to original data)
-  const handleReset = () => {
-    setFilteredExpenses(expenses);
-    setSearchQuery("");
-  };
-
-  // Upload Receipt
+  // UPLOAD receipt
   const handleUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     setUploadMessage("Uploading receipt...");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("username", username);
+    const uploadForm = new FormData();
+    uploadForm.append("file", file);
+    uploadForm.append("username", username);
 
     try {
       const response = await fetch("http://127.0.0.1:5000/api/upload_expense", {
         method: "POST",
-        body: formData,
+        body: uploadForm,
       });
-
       const data = await response.json();
       setUploadMessage(data.message);
 
@@ -225,13 +208,61 @@ const Home = ({ onLogout }) => {
     }
   };
 
-  // Logout
-  const handleLogout = () => {
-    localStorage.removeItem("loggedInUser");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 100);
-  };
+  // ----------------------------------------------------------------------------------
+  // STACKED BAR BY CATEGORY
+  // ----------------------------------------------------------------------------------
+
+  const categoriesMap = expenses.reduce((acc, expense) => {
+    const cat = expense.category || "Uncategorized";
+    acc[cat] = (acc[cat] || 0) + parseFloat(expense.amount);
+    return acc;
+  }, {});
+
+  const totalSpent = Object.values(categoriesMap).reduce((sum, val) => sum + val, 0);
+
+  const colorPalette = [
+    "#4CAF50", // Green
+    "#2196F3", // Blue
+    "#FF9800", // Orange
+    "#9C27B0", // Purple
+    "#F44336", // Red
+    "#795548", // Brown
+    "#009688", // Teal
+    "#673AB7", // Deep Purple
+    "#E91E63", // Pink
+    "#3F51B5", // Indigo
+    "#00BCD4", // Cyan
+    "#8BC34A", // Light Green
+    "#FFC107", // Amber
+    "#FF5722", // Deep Orange
+    "#607D8B", // Blue Grey
+    "#CDDC39", // Lime
+    "#03A9F4", // Light Blue
+    "#9E9E9E", // Grey
+    "#FFEB3B", // Yellow
+    "#E65100", // Dark Orange
+    "#1A237E", // Dark Indigo
+    "#4DD0E1", // Light Teal
+    "#004D40", // Dark Teal
+    "#D32F2F", // Dark Red
+    "#F48FB1", // Light Pink
+    "#CE93D8", // Light Purple
+    "#37474F", // Dark Blue Grey
+    "#AED581", // Light Lime Green
+    "#FDD835", // Deep Yellow
+    "#D1C4E9", // Lavender
+    "#00796B", // Dark Tealish
+    "#C51162", // Dark Pinkish
+    "#FFF59D", // Very Light Yellow
+    "#6D4C41", // Dark Brown
+    "#263238", // Almost black (very dark grey)
+  ];
+  
+
+  // We'll render each category as a segment in a flex container
+  // Each segment's width => (categoryAmount / totalSpent) * 100
+  // If totalSpent == 0 (edge case), skip the bar
+  // ----------------------------------------------------------------------------------
 
   return (
     <div className="home-container">
@@ -243,19 +274,12 @@ const Home = ({ onLogout }) => {
         <h2>PennyWise</h2>
         <ul>
           <li>Home</li>
-          <li onClick={fetchUserProfile}>Profile</li>
+          <li onClick={() => navigate("/profile")}>Profile</li>
           <li>Set Alerts (Coming Soon)</li>
-          <li
-            onClick={() => {
-              setIsUploadModalOpen(true);
-              setIsModalOpen(false); // Close "Add Line" modal if open
-            }}
-          >
-            Upload Receipt
-          </li>
+          <li onClick={() => setIsUploadModalOpen(true)}>Upload Receipt</li>
           <li>Link Bank (Coming Soon)</li>
         </ul>
-        <button className="logout-btn" onClick={handleLogout}>
+        <button className="logout-btn" onClick={onLogout}>
           Logout
         </button>
       </div>
@@ -276,7 +300,58 @@ const Home = ({ onLogout }) => {
         <h1>Welcome, {fullName}!</h1>
       </div>
 
-      {/* Search, Sort, and Reset Controls */}
+      {/* 
+        ----------------------------------------------------------------------------------
+        STACKED BAR (PER-CATEGORY)
+        ----------------------------------------------------------------------------------
+      */}
+      {totalSpent > 0 && (
+        <>
+          {/* The bar itself */}
+          <div className="category-bar-container">
+            {Object.entries(categoriesMap).map(([cat, catAmount], idx) => {
+              const fraction = (catAmount / totalSpent) * 100;
+              const color = colorPalette[idx % colorPalette.length];
+              return (
+                <div
+                  key={cat}
+                  className="category-bar-segment"
+                  style={{ width: fraction + "%", backgroundColor: color }}
+                  title={`${cat}: $${catAmount.toFixed(2)} (${fraction.toFixed(1)}%)`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="category-legend">
+            {Object.entries(categoriesMap).map(([cat, catAmount], idx) => {
+              const fraction = (catAmount / totalSpent) * 100;
+              const color = colorPalette[idx % colorPalette.length];
+              return (
+                <div className="legend-item" key={cat}>
+                  <span
+                    className="legend-color"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="legend-text">
+                    {cat}: ${catAmount.toFixed(2)} ({fraction.toFixed(1)}%)
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* If totalSpent == 0, you can show a small note or just hide the bar */}
+      {totalSpent === 0 && (
+        <p style={{ fontStyle: "italic", margin: "1rem 0" }}>
+          No expenses yet, so no category breakdown to show.
+        </p>
+      )}
+
+      {/* Controls */}
       <div className="controls">
         <input
           type="text"
@@ -337,39 +412,27 @@ const Home = ({ onLogout }) => {
         </table>
       </div>
 
-      {isProfileOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>User Profile</h3>
-            <p><strong>Name:</strong> {userInfo.name}</p>
-            <p><strong>Username:</strong> {userInfo.username}</p>
-            <p><strong>Email:</strong> {userInfo.email}</p>
-            <button onClick={() => setIsProfileOpen(false)}>Close</button>
-          </div>
-        </div>
-      )}
+      {/* Add / Delete Buttons */}
+      <div className="action-buttons">
+        <button
+          className="add-line-btn"
+          onClick={() => {
+            setIsModalOpen(true);
+            setIsUploadModalOpen(false);
+          }}
+        >
+          Add Transaction
+        </button>
+        <button
+          className="delete-btn"
+          onClick={handleDelete}
+          disabled={!selectedExpenses.length}
+        >
+          Delete Transaction
+        </button>
+      </div>
 
-
-      {/* Add Line Button */}
-      <button
-        className="add-line-btn"
-        onClick={() => {
-          setIsModalOpen(true);
-          setIsUploadModalOpen(false);
-        }}
-      >
-        Add Transaction
-      </button>
-
-      <button
-        className="delete-btn"
-        onClick={handleDelete}
-        disabled={!selectedExpenses.length}
-      >
-        Delete Transaction
-      </button>
-
-      {/* Add Line Modal */}
+      {/* Add Expense Modal */}
       {isModalOpen && (
         <div className="modal">
           <div className="modal-content">
@@ -407,10 +470,7 @@ const Home = ({ onLogout }) => {
                 required
               />
               <button type="submit">Add Expense</button>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-              >
+              <button type="button" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </button>
             </form>
