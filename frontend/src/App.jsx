@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Auth from "./Auth";
-import Home from "./Home"; // Import Home
+import Home from "./Home"; 
+import Profile from "./Profile"; // Import Profile Page
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState(localStorage.getItem("loggedInUser") || null);
@@ -25,6 +26,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Auth onLogin={handleLogin} />} />
         <Route path="/home" element={<Home username={loggedInUser} onLogout={handleLogout} />} />
+        <Route path="/profile" element={<Profile />} /> {/* ✅ Added Profile Route */}
       </Routes>
     </Router>
   );

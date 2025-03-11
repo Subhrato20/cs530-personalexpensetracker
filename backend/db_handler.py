@@ -1,6 +1,7 @@
 import sqlite3
 
-DATABASE = "users.db" # Load from local DB for now
+DATABASE = "users.db"  # Load from local DB for now
+
 
 def init_db():
     # Initializes the database and creates the users table if it doesn't exist.
@@ -30,7 +31,7 @@ def init_db():
             )
         ''')
 
-                # Alerts table
+        # Alerts table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS alerts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,8 +45,10 @@ def init_db():
 
         conn.commit()
 
+
 # Initialize the database when the module is loaded.
 init_db()
+
 
 def signup_user(username, name, email, password):
     # Signs up a new user by inserting into the SQLite DB and returns the user ID.
@@ -53,12 +56,12 @@ def signup_user(username, name, email, password):
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (username, name, email, password) VALUES (?, ?, ?, ?)", 
+            cursor.execute("INSERT INTO users (username, name, email, password) VALUES (?, ?, ?, ?)",
                            (username, name, email, password))
             conn.commit()
             user_id = cursor.lastrowid
             return {"success": True, "message": "User registered successfully.", "user_id": user_id}
-    
+
     except sqlite3.IntegrityError as e:
         error_message = str(e)
 
@@ -75,6 +78,7 @@ def signup_user(username, name, email, password):
     except Exception as e:
         return {"success": False, "message": f"Unexpected Error: {str(e)}"}
 
+
 def signin_user_by_email(email, password):
     # Signs in a user by checking email and password.
 
@@ -88,16 +92,17 @@ def signin_user_by_email(email, password):
                 return {"success": True, "message": "Login successful.", "user_id": row[0]}
             else:
                 return {"success": False, "message": "Invalid email or password."}
-    
+
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
 
     except Exception as e:
         return {"success": False, "message": f"Unexpected Error: {str(e)}"}
 
+
 def signin_user_by_username(username, password):
     # Signs in a user by checking username and password.
-    
+
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
@@ -108,42 +113,44 @@ def signin_user_by_username(username, password):
                 return {"success": True, "message": "Login successful.", "user_id": row[0]}
             else:
                 return {"success": False, "message": "Invalid username or password."}
-    
+
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
 
     except Exception as e:
         return {"success": False, "message": f"Unexpected Error: {str(e)}"}
 
+
 def get_user_info(username):
-    """Fetches the full name of a user based on their username."""
+    """Fetches the full name and email of a user based on their username."""
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM users WHERE username = ?", (username,))
+            cursor.execute("SELECT name, email FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
 
             if row:
-                return {"success": True, "name": row[0]}
+                return {"success": True, "name": row[0], "email": row[1]}
             else:
                 return {"success": False, "message": "User not found."}
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
 
+
 def add_expense(username, name, amount, category, date):
     """Adds an expense for a user."""
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO expenses (username, name, amount, category, date) VALUES (?, ?, ?, ?, ?)", 
+            cursor.execute("INSERT INTO expenses (username, name, amount, category, date) VALUES (?, ?, ?, ?, ?)",
                            (username, name, amount, category, date))
             conn.commit()
             return {"success": True, "message": "Expense added successfully."}
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
-    
+
 
 def get_expenses(username):
     """Fetches all expenses for a specific user."""
@@ -184,13 +191,14 @@ def set_alert(username, name, amount, due_date):
     try:
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO alerts (username, name, amount, due_date) VALUES (?, ?, ?, ?)", 
+            cursor.execute("INSERT INTO alerts (username, name, amount, due_date) VALUES (?, ?, ?, ?)",
                            (username, name, amount, due_date))
             conn.commit()
             return {"success": True, "message": "Alert set successfully."}
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
+
 
 def get_alerts(username):
     """Fetches all alerts for a specific user."""

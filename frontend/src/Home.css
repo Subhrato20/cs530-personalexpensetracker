@@ -364,3 +364,52 @@ button:hover {
 .delete-btn:hover:not(:disabled) {
   background-color: darkred;
 }
+
+
+/* ----- Stacked Bar & Legend ----- */
+
+.category-bar-container {
+  display: flex;         /* So each segment lines up horizontally. */
+  height: 20px;          /* Bar thickness */
+  width: 100%;
+  background-color: #ddd;
+  border-radius: 6px;
+  overflow: hidden;      /* Ensures segments respect border-radius */
+  margin: 1rem 0;
+}
+
+/* Each category segment in the stacked bar */
+.category-bar-segment {
+  height: 100%;
+  /* backgroundColor is set inline via style=... in the code */
+  transition: width 0.5s ease;
+}
+
+/* Legend container */
+.category-legend {
+  display: flex;
+  flex-wrap: wrap;  /* Wrap to the next line if too wide */
+  margin-bottom: 1rem;
+}
+
+/* Each legend item: color swatch + text */
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* The color box in the legend */
+.legend-color {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  margin-right: 5px;
+  border-radius: 2px;
+}
+
+/* The text that appears next to each color box */
+.legend-text {
+  font-size: 0.9rem;
+}
