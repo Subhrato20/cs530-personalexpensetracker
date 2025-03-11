@@ -6,6 +6,7 @@ const Home = ({ onLogout }) => {
   const [fullName, setFullName] = useState("");
   const [expenses, setExpenses] = useState([]); // Original data
   const [filteredExpenses, setFilteredExpenses] = useState([]); // Displayed data
+  const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     amount: "",
@@ -129,6 +130,43 @@ const Home = ({ onLogout }) => {
     setFilteredExpenses(filtered);
   };
 
+  // Handle checkbox selection
+  const handleCheckboxChange = (expenseId) => {
+    setSelectedExpenses((prevSelected) =>
+      prevSelected.includes(expenseId)
+        ? prevSelected.filter((id) => id !== expenseId)
+        : [...prevSelected, expenseId]
+    );
+  };
+
+  // Handle delete confirmation
+  const handleDelete = async () => {
+    if (!selectedExpenses.length) return;
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete the selected expenses?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/delete_expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expense_ids: selectedExpenses }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setExpenses(expenses.filter((exp) => !selectedExpenses.includes(exp.id)));
+        setFilteredExpenses(filteredExpenses.filter((exp) => !selectedExpenses.includes(exp.id)));
+        setSelectedExpenses([]); // Clear selection
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      alert("Error deleting expenses.");
+    }
+  };
+
   // Reset search and sort (go back to original data)
   const handleReset = () => {
     setFilteredExpenses(expenses);
@@ -241,6 +279,7 @@ const Home = ({ onLogout }) => {
         <table>
           <thead>
             <tr>
+              <th>Select</th>
               <th>Name</th>
               <th>Amount</th>
               <th>Category</th>
@@ -251,6 +290,13 @@ const Home = ({ onLogout }) => {
             {filteredExpenses.length > 0 ? (
               filteredExpenses.map((expense, index) => (
                 <tr key={index}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedExpenses.includes(expense.id)}
+                      onChange={() => handleCheckboxChange(expense.id)}
+                    />
+                  </td>
                   <td>{expense.name}</td>
                   <td>${expense.amount}</td>
                   <td>{expense.category}</td>
@@ -259,7 +305,7 @@ const Home = ({ onLogout }) => {
               ))
             ) : (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center", padding: "10px" }}>
+                <td colSpan="5" style={{ textAlign: "center", padding: "10px" }}>
                   No matching transactions found.
                 </td>
               </tr>
@@ -277,6 +323,14 @@ const Home = ({ onLogout }) => {
         }}
       >
         Add Transaction
+      </button>
+
+      <button
+        className="delete-btn"
+        onClick={handleDelete}
+        disabled={!selectedExpenses.length}
+      >
+        Delete Transaction
       </button>
 
       {/* Add Line Modal */}

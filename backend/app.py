@@ -74,6 +74,17 @@ def get_expenses():
     result = db_handler.get_expenses(username)
     return jsonify(result)
 
+@app.route('/api/delete_expenses', methods=['POST'])
+def delete_expenses():
+    data = request.get_json()
+    expense_ids = data.get("expense_ids", [])
+
+    if not expense_ids:
+        return jsonify({"success": False, "message": "No expenses selected for deletion."}), 400
+
+    result = db_handler.delete_expenses(expense_ids)
+    return jsonify(result)
+
 @app.route('/api/upload_expense', methods=['POST'])
 def upload_expense():
     """

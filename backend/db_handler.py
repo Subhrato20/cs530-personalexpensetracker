@@ -165,7 +165,19 @@ def get_expenses(username):
 
     except sqlite3.Error as e:
         return {"success": False, "message": f"Database Error: {str(e)}"}
-    
+
+def delete_expenses(expense_ids):
+    """Deletes expenses based on provided IDs."""
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"DELETE FROM expenses WHERE id IN ({','.join('?' * len(expense_ids))})", expense_ids)
+            conn.commit()
+
+            return {"success": True, "message": "Expenses deleted successfully."}
+
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database Error: {str(e)}"}
 
 def set_alert(username, name, amount, due_date):
     """Sets an alert for a user."""

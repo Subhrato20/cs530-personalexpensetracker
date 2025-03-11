@@ -9,7 +9,15 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
-IMAGE_PATH = "test_data/3.png"
+IMAGE_PATH = "sample_receipt_images/3.png"
+
+expense_categories = [
+    "Groceries", "Dining & Restaurants", "Food & Beverage", "Rent/Mortgage",
+    "Utilities", "Transportation", "Insurance", "Healthcare", "Entertainment",
+    "Personal Care", "Education", "Investments & Savings", "Debt Payments", "Gifts & Donations",
+    "Travel", "Business Expenses", "Taxes", "Household Maintenance & Repairs",
+    "Childcare & School Expenses", "Pets", "Miscellaneous"
+]
 
 def encode_image(image_path):
     """Encodes the image in Base64 format."""
@@ -38,10 +46,19 @@ def extract_receipt_details(image_path):
                 "content": [
                     {
                         "type": "text",
-                        "text": (
-                            "Extract the following details from this receipt: amount, category, date, name. "
-                            "Return ONLY a single JSON object with these keys: amount, category, date, name. "
-                            "Do not include any extra text or formatting."
+                        "text": (f"""
+Extract the following details from this receipt accurately in a JSON like this:
+
+    "amount": "The total amount spent",
+    "category": "Classify based on the most relevant option from the predefined categories: {expense_categories}",
+    "date": "The transaction date in MM/DD/YY format",
+    "name": "The name of the store, merchant, or business where the transaction occurred"
+                        
+If any field is missing or unreadable, return `null` for that field
+Return ONLY a single JSON object with these exact keys: 'name', 'amount', 'category', 'date'
+Do NOT include any extra text, explanations, or formatting (ticks or dashes)
+Ensure the extracted details are correctly assigned to the appropriate fields
+"""
                         )
                     },
                     {
