@@ -26,7 +26,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Auth onLogin={handleLogin} />} />
         <Route path="/home" element={<Home username={loggedInUser} onLogout={handleLogout} />} />
-        <Route path="/profile" element={<Profile />} /> {/* ✅ Added Profile Route */}
+        <Route path="/profile" element={<Profile />} /> {/* Added Profile Route */}
       </Routes>
     </Router>
   );
